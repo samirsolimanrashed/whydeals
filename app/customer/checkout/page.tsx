@@ -2,212 +2,184 @@
 
 import { useState, useEffect } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
-import { getMockDeals } from '@/lib/mockData'
+import { useSession } from 'next-auth/react'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+
+interface Deal {
+  id: string
+  title: string
+  price: number
+  image?: string
+  inventory: number
+  sold: number
+}
 
 export default function CheckoutPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const dealId = searchParams.get('dealId')
+  const [deal, setDeal] = useState<Deal | null>(null)
   const [quantity, setQuantity] = useState(1)
-  const [paymentMethod, setPaymentMethod] = useState<'stripe' | 'paypal'>('stripe')
-  const [isProcessing, setIsProcessing] = useState(false)
-
-  const deals = getMockDeals()
-  const deal = dealId ? deals.find(d => d.id === dealId) : null
+  const [loading, setLoading] = useState(false)
+  const [dealLoading, setDealLoading] = useState(true)
+  const { data: session } = useSession()
 
   useEffect(() => {
-    if (!dealId || !deal) {
-      router.push('/')
+    if (dealId) {
+      const fetchDeal = async () => {
+        try {
+          const response = await fetch(`/api/deals/${dealId}`)
+          const data = await response.json()
+          setDeal(data)
+        } catch (error) {
+          console.error('Failed to fetch deal:', error)
+        } finally {
+          setDealLoading(false)
+        }
+      }
+      fetchDeal()
     }
-  }, [dealId, deal, router])
+  }, [dealId])
+
+  const handleCheckout = async () => {
+    if (!deal || !session?.user?.id) {
+      router.push('/auth/signin')
+      return
+    }
+    setLoading(true)
+    try {
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          dealId: deal.id,
+          quantity,
+          userId: session.user.id,
+        }),
+      })
+      const data = await response.json()
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error) {
+      console.error('Checkout failed:', error)
+      alert('Checkout failed. Please try again.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (dealLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
+        <p className="text-neutral-600">Loading deal...</p>
+      </div>
+    )
+  }
 
   if (!deal) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-white">
         <div className="text-center">
-          <h1 className="text-3xl font-bold mb-4">Deal Not Found</h1>
-          <button
-            onClick={() => router.push('/')}
-            className="text-blue-600 hover:underline"
-          >
-            Return to Home
-          </button>
+          <h2 className="text-2xl font-bold text-neutral-900 mb-4">Deal not found</h2>
+          <Button onClick={() => router.push('/')}>Back to Deals</Button>
         </div>
       </div>
     )
   }
 
-  const subtotal = deal.discountPrice * quantity
-  const platformFee = subtotal * 0.05 // 5% platform fee
+  const available = deal.inventory - deal.sold
+  const price = typeof deal.price === 'number' ? deal.price : 0
+  const subtotal = price * quantity
+  const platformFee = subtotal * 0.1
   const total = subtotal + platformFee
 
-  const handleCheckout = async () => {
-    setIsProcessing(true)
-    
-    try {
-      if (paymentMethod === 'stripe') {
-        // Create Stripe checkout session
-        const response = await fetch('/api/stripe/create-checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            dealId: deal.id,
-            quantity,
-            userId: 'user-1', // TODO: Get from session/auth
-          }),
-        })
-
-        const data = await response.json()
-        
-        if (data.url) {
-          // Redirect to Stripe Checkout
-          window.location.href = data.url
-        } else {
-          throw new Error('Failed to create checkout session')
-        }
-      } else if (paymentMethod === 'paypal') {
-        // TODO: Implement PayPal checkout
-        alert('PayPal integration coming soon!')
-        setIsProcessing(false)
-      }
-    } catch (error: any) {
-      console.error('Checkout error:', error)
-      alert('Payment processing failed. Please try again.')
-      setIsProcessing(false)
-    }
-  }
-
   return (
-    <div className="container mx-auto px-4 py-8 max-w-4xl">
-      <h1 className="text-4xl font-bold mb-8">Secure Checkout</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12 px-4">
+      <div className="max-w-2xl mx-auto">
+        <h1 className="text-4xl font-bold text-neutral-900 mb-8">Checkout</h1>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Order Summary */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">Order Details</h2>
-            
-            <div className="flex gap-4 mb-6">
-              {deal.imageUrl && (
+        <div className="grid gap-6">
+          {/* Deal Summary */}
+          <Card className="p-6">
+            <div className="flex gap-6">
+              {deal.image && (
                 <img
-                  src={deal.imageUrl}
+                  src={deal.image}
                   alt={deal.title}
-                  className="w-24 h-24 object-cover rounded-lg"
+                  className="w-32 h-32 object-cover rounded-lg"
                 />
               )}
               <div className="flex-1">
-                <h3 className="font-semibold text-lg">{deal.title}</h3>
-                <p className="text-gray-600 text-sm">{deal.provider?.businessName}</p>
-                <div className="mt-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Quantity
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50"
-                    >
-                      -
-                    </button>
-                    <span className="w-12 text-center font-semibold">{quantity}</span>
-                    <button
-                      type="button"
-                      onClick={() => setQuantity(quantity + 1)}
-                      disabled={deal.maxPurchases ? quantity >= deal.maxPurchases - deal.currentPurchases : false}
-                      className="w-8 h-8 border border-gray-300 rounded flex items-center justify-center hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      +
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <h2 className="text-2xl font-semibold mb-4">Payment Method</h2>
-            
-            <div className="space-y-3">
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="stripe"
-                  checked={paymentMethod === 'stripe'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'stripe')}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold">Credit/Debit Card (Stripe)</div>
-                  <div className="text-sm text-gray-600">Secure payment via Stripe</div>
-                </div>
-                <div className="text-2xl">💳</div>
-              </label>
-
-              <label className="flex items-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-blue-500 transition">
-                <input
-                  type="radio"
-                  name="paymentMethod"
-                  value="paypal"
-                  checked={paymentMethod === 'paypal'}
-                  onChange={(e) => setPaymentMethod(e.target.value as 'paypal')}
-                  className="mr-3"
-                />
-                <div className="flex-1">
-                  <div className="font-semibold">PayPal</div>
-                  <div className="text-sm text-gray-600">Pay with your PayPal account</div>
-                </div>
-                <div className="text-2xl">🅿️</div>
-              </label>
-            </div>
-
-            {paymentMethod === 'stripe' && (
-              <div className="mt-6 p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm text-blue-800">
-                  <strong>Note:</strong> Stripe integration placeholder. In production, this would 
-                  connect to Stripe Checkout or Elements for secure card processing.
+                <h2 className="text-2xl font-bold text-neutral-900 mb-2">{deal.title}</h2>
+                <p className="text-3xl font-bold text-blue-600 mb-4">${price.toFixed(2)}</p>
+                <p className="text-neutral-600">
+                  {available} items available
                 </p>
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </Card>
 
-        {/* Order Summary Sidebar */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
-            <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-            
-            <div className="space-y-3 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Subtotal ({quantity} item{quantity > 1 ? 's' : ''})</span>
-                <span className="font-semibold">${subtotal.toFixed(2)}</span>
+          {/* Quantity Selection */}
+          <Card className="p-6">
+            <label className="block text-sm font-semibold text-neutral-900 mb-3">
+              Quantity
+            </label>
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                className="w-10 h-10 rounded-lg border border-neutral-300 flex items-center justify-center hover:bg-neutral-100 font-bold"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min="1"
+                max={available}
+                value={quantity}
+                onChange={(e) => setQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                className="w-20 text-center border border-neutral-300 rounded-lg px-3 py-2 font-semibold"
+              />
+              <button
+                onClick={() => setQuantity(Math.min(available, quantity + 1))}
+                className="w-10 h-10 rounded-lg border border-neutral-300 flex items-center justify-center hover:bg-neutral-100 font-bold"
+              >
+                +
+              </button>
+            </div>
+          </Card>
+
+          {/* Price Breakdown */}
+          <Card className="p-6">
+            <div className="space-y-3">
+              <div className="flex justify-between text-neutral-600">
+                <span>Subtotal ({quantity}x)</span>
+                <span>${subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Platform Fee (5%)</span>
-                <span className="font-semibold">${platformFee.toFixed(2)}</span>
+              <div className="flex justify-between text-neutral-600">
+                <span>Platform Fee (10%)</span>
+                <span>${platformFee.toFixed(2)}</span>
               </div>
-              <div className="border-t pt-3 flex justify-between">
-                <span className="font-semibold text-lg">Total</span>
-                <span className="font-bold text-xl text-blue-600">${total.toFixed(2)}</span>
+              <div className="border-t border-neutral-200 pt-3 flex justify-between text-lg font-bold text-neutral-900">
+                <span>Total</span>
+                <span className="text-blue-600">${total.toFixed(2)}</span>
               </div>
             </div>
+          </Card>
 
-            <button
-              onClick={handleCheckout}
-              disabled={isProcessing}
-              className="w-full bg-blue-600 text-white py-4 rounded-lg font-semibold text-lg hover:bg-blue-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isProcessing ? 'Processing...' : `Pay $${total.toFixed(2)}`}
-            </button>
-
-            <div className="mt-4 text-xs text-gray-500 text-center">
-              🔒 Secure payment processing
-            </div>
-          </div>
+          {/* Checkout Button */}
+          <Button
+            variant="primary"
+            size="lg"
+            onClick={handleCheckout}
+            isLoading={loading}
+            className="w-full"
+          >
+            Proceed to Payment
+          </Button>
         </div>
       </div>
     </div>
   )
 }
-

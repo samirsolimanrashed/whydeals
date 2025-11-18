@@ -1,130 +1,132 @@
 'use client'
 
-import { useState, useMemo } from 'react'
-import DealCard from '@/components/DealCard'
-import { getMockDeals } from '@/lib/mockData'
-import { categories, sortOptions, type SortOption } from '@/lib/categories'
-import type { MockDeal } from '@/lib/mockData'
+import Link from 'next/link'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 
 export default function HomePage() {
-  const allDeals = getMockDeals()
-  const [selectedCategory, setSelectedCategory] = useState<string>('all')
-  const [sortBy, setSortBy] = useState<SortOption>('time-left')
-  const [searchQuery, setSearchQuery] = useState('')
-
-  const filteredAndSortedDeals = useMemo(() => {
-    let filtered = allDeals
-
-    // Filter by category
-    if (selectedCategory !== 'all') {
-      filtered = filtered.filter(deal => deal.category === selectedCategory)
-    }
-
-    // Filter by search query
-    if (searchQuery) {
-      filtered = filtered.filter(deal =>
-        deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        deal.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        deal.provider?.businessName.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    }
-
-    // Sort deals
-    const sorted = [...filtered].sort((a, b) => {
-      switch (sortBy) {
-        case 'time-left':
-          return new Date(a.endDate).getTime() - new Date(b.endDate).getTime()
-        case 'price-low':
-          return a.discountPrice - b.discountPrice
-        case 'price-high':
-          return b.discountPrice - a.discountPrice
-        case 'popularity':
-          return (b.views || 0) - (a.views || 0)
-        case 'discount':
-          return b.discountPercent - a.discountPercent
-        default:
-          return 0
-      }
-    })
-
-    // Show sponsored deals first
-    return sorted.sort((a, b) => {
-      if (a.isSponsored && !b.isSponsored) return -1
-      if (!a.isSponsored && b.isSponsored) return 1
-      return 0
-    })
-  }, [selectedCategory, sortBy, searchQuery, allDeals])
+  const mockDeals = [
+    {
+      id: '1',
+      title: 'Premium Coffee Maker',
+      description: 'High-end espresso machine with built-in grinder',
+      price: 299.99,
+      image: '☕',
+      category: 'Electronics',
+      inventory: 50,
+      sold: 12,
+      endAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '2',
+      title: 'Wireless Headphones',
+      description: 'Noise-canceling Bluetooth headphones with 30hr battery',
+      price: 149.99,
+      image: '🎧',
+      category: 'Electronics',
+      inventory: 100,
+      sold: 45,
+      endAt: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+    {
+      id: '3',
+      title: 'Yoga Mat Premium',
+      description: 'Non-slip yoga mat with carrying strap',
+      price: 49.99,
+      image: '🧘',
+      category: 'Wellness',
+      inventory: 200,
+      sold: 85,
+      endAt: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
+    },
+  ]
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Featured Deals</h1>
-        <p className="text-gray-600">Discover amazing deals from local providers</p>
-      </div>
-
-      {/* Search Bar */}
-      <div className="mb-6">
-        <input
-          type="text"
-          placeholder="Search deals, providers..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full md:w-1/2 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-        />
-      </div>
-
-      {/* Filters and Sort */}
-      <div className="mb-6 flex flex-col md:flex-row gap-4">
-        {/* Category Filter */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-          <select
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e.target.value)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.slug === 'all' ? 'all' : cat.name}>
-                {cat.icon} {cat.name}
-              </option>
-            ))}
-          </select>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+      {/* Hero Section */}
+      <section className="py-20 px-4">
+        <div className="max-w-6xl mx-auto text-center">
+          <h1 className="text-5xl font-bold text-neutral-900 mb-4">
+            Amazing Deals, Limited Time
+          </h1>
+          <p className="text-xl text-neutral-600 mb-8">
+            Discover exclusive offers from trusted merchants
+          </p>
+          <div className="flex gap-4 justify-center">
+            <Link href="/customer/deals">
+              <Button variant="primary" size="lg">
+                Browse All Deals
+              </Button>
+            </Link>
+            <Link href="/auth/signin">
+              <Button variant="outline" size="lg">
+                Sign In
+              </Button>
+            </Link>
+          </div>
         </div>
+      </section>
 
-        {/* Sort */}
-        <div className="flex-1">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value as SortOption)}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          >
-            {sortOptions.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
+      {/* Featured Deals */}
+      <section className="py-16 px-4">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-neutral-900 mb-8">Featured Deals</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mockDeals.map(deal => {
+              const remaining = deal.inventory - deal.sold
+              const soldPercent = (deal.sold / deal.inventory) * 100
 
-      {/* Results Count */}
-      <div className="mb-4 text-sm text-gray-600">
-        Showing {filteredAndSortedDeals.length} of {allDeals.length} deals
-      </div>
+              return (
+                <Link key={deal.id} href={`/customer/deals/${deal.id}`}>
+                  <Card className="p-6 h-full hover:shadow-lg transition-shadow">
+                    <div className="text-6xl mb-4">{deal.image}</div>
+                    <div className="mb-2 inline-block px-2 py-1 bg-blue-100 text-blue-700 rounded text-sm font-semibold">
+                      {deal.category}
+                    </div>
+                    <h3 className="text-xl font-bold text-neutral-900 mb-2">
+                      {deal.title}
+                    </h3>
+                    <p className="text-neutral-600 text-sm mb-4 line-clamp-2">
+                      {deal.description}
+                    </p>
+                    <p className="text-2xl font-bold text-blue-600 mb-4">
+                      ${deal.price.toFixed(2)}
+                    </p>
+                    <div className="mb-4">
+                      <div className="flex justify-between text-xs text-neutral-500 mb-1">
+                        <span>{deal.sold} sold</span>
+                        <span>{remaining} left</span>
+                      </div>
+                      <div className="w-full bg-neutral-200 rounded-full h-2">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(soldPercent, 100)}%` }}
+                        />
+                      </div>
+                    </div>
+                    <Button variant="primary" size="md" className="w-full">
+                      View Deal
+                    </Button>
+                  </Card>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </section>
 
-      {/* Deals Grid */}
-      {filteredAndSortedDeals.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedDeals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
-          ))}
+      {/* CTA Section */}
+      <section className="py-16 px-4 bg-blue-600 text-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold mb-4">Ready to Start Saving?</h2>
+          <p className="text-blue-100 mb-8">Create an account now and get access to exclusive deals</p>
+          <Link href="/auth/signup">
+            <Button variant="primary" size="lg" className="bg-white text-blue-600 hover:bg-neutral-100">
+              Sign Up Free
+            </Button>
+          </Link>
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No deals found matching your criteria.</p>
-        </div>
-      )}
+      </section>
     </div>
   )
 }

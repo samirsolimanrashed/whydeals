@@ -152,6 +152,27 @@ NEXTAUTH_SECRET=...
 - Default sign-out page: `/auth/signout`
 - Session includes `user.id` and `user.role` for authorization
 
+## 🛠 Developer Checks
+
+- **Install dependencies**:
+  ```bash
+  npm install
+  ```
+- **TypeScript check**:
+  ```bash
+  npx tsc --noEmit
+  ```
+- **Apply Prisma changes** (after editing `prisma/schema.prisma`):
+  ```bash
+  npm run db:generate
+  npm run db:push
+  ```
+- **Test Stripe webhooks locally** (using Stripe CLI):
+  ```bash
+  stripe listen --forward-to localhost:3000/api/stripe/webhook
+  ```
+
+
 ## 📚 Documentation
 
 - See `SETUP.md` for detailed setup instructions

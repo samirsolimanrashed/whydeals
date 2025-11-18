@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { stripe } from '@/lib/stripe'
 import { headers } from 'next/headers'
-import { prisma } from '@/lib/prisma'
+import { handleStripeEvent } from '@/lib/webhookHandler'
 
 export async function POST(request: NextRequest) {
   const body = await request.text()
@@ -30,31 +30,12 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // Handle the event
-  switch (event.type) {
-    case 'checkout.session.completed':
-      const session = event.data.object as any
-      
-      // Update purchase status in database
-      if (session.metadata?.purchaseId) {
-        await prisma.purchase.update({
-          where: { id: session.metadata.purchaseId },
-          data: {
-            status: 'COMPLETED',
-            paymentId: session.id,
-            paymentMethod: 'stripe',
-          },
-        })
-      }
-      break
-
-    case 'payment_intent.succeeded':
-      const paymentIntent = event.data.object
-      console.log('PaymentIntent succeeded:', paymentIntent.id)
-      break
-
-    default:
-      console.log(`Unhandled event type ${event.type}`)
+  // Delegate to the handler
+  try {
+    await handleStripeEvent(event)
+  } catch (err: any) {
+    console.error('Error handling stripe event', err)
+    return NextResponse.json({ error: err.message || 'Handler error' }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
