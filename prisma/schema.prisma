@@ -1,7 +1,3 @@
-// -------------------------------------------------------
-// WhyDeals Platform - Prisma Schema
-// -------------------------------------------------------
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -11,63 +7,43 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// -------------------------------------------------------
-// USERS & AUTH
-// -------------------------------------------------------
-
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String         @id @default(cuid())
+  email         String         @unique
   password      String?
   name          String?
   phone         String?
   avatar        String?
-  role          String    @default("CUSTOMER") // CUSTOMER, PROVIDER, ADMIN, SUPERADMIN
-  verified      Boolean   @default(false)
-  active        Boolean   @default(true)
-
-  // Relations
-  providerProfile   ProviderProfile?
-  purchases         Purchase[]
-  wallet            Wallet?
-  notifications     Notification[]
-  reviews           Review[]
-  favorites         Favorite[]
-  sessions          Session[]
-
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  role          String         @default("CUSTOMER")
+  verified      Boolean        @default(false)
+  active        Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  favorites     Favorite[]
+  notifications Notification[]
+  purchases     Purchase[]
+  reviews       Review[]
+  sellerProfile SellerProfile?
+  sessions      Session[]
+  wallet        Wallet?
 
   @@index([email])
   @@index([role])
 }
 
-// -------------------------------------------------------
-// SESSIONS (NextAuth)
-// -------------------------------------------------------
-
 model Session {
-  id            String  @id @default(cuid())
-  sessionToken  String  @unique
-  user          User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId        String
-  expires       DateTime
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// -------------------------------------------------------
-// PROVIDERS
-// -------------------------------------------------------
-
-model ProviderProfile {
-  id              String  @id @default(cuid())
-
-  // Relation to user
-  user            User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId          String  @unique
-
-  // Business Info
+model SellerProfile {
+  id              String           @id @default(cuid())
+  userId          String           @unique
   businessName    String
   businessEmail   String?
   phone           String?
@@ -75,136 +51,94 @@ model ProviderProfile {
   banner          String?
   bio             String?
   website         String?
-
-  // KYC/Verification
-  approved        Boolean   @default(false)
+  approved        Boolean          @default(false)
   rejectionReason String?
   verifiedAt      DateTime?
-
-  // Stats
-  totalDeals      Int       @default(0)
-  totalSales      Float     @default(0)
-  rating          Float     @default(0)
-
-  // Relations
+  totalDeals      Int              @default(0)
+  totalSales      Float            @default(0)
+  rating          Float            @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
   deals           Deal[]
   payoutAccount   PayoutAccount?
-  analytics       ProviderAnalytics?
-
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  analytics       SellerAnalytics?
+  user            User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([approved])
 }
 
-// -------------------------------------------------------
-// PAYOUT ACCOUNT (For Provider Payments)
-// -------------------------------------------------------
-
 model PayoutAccount {
-  id                String  @id @default(cuid())
-  provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId        String  @unique
-
-  accountHolder     String
-  bankName          String?
-  accountNumber     String
-  routingNumber     String?
-  accountType       String  // CHECKING, SAVINGS
-  country           String
-
-  verified          Boolean @default(false)
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id            String        @id @default(cuid())
+  sellerId      String        @unique
+  accountHolder String
+  bankName      String?
+  accountNumber String
+  routingNumber String?
+  accountType   String
+  country       String
+  verified      Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  seller        SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 }
 
-// -------------------------------------------------------
-// DEALS
-// -------------------------------------------------------
-
 model Deal {
-  id                String      @id @default(cuid())
-  title             String
-  description       String
-  category          String?
-  image             String?
-  imageUrl          String?
+  id                 String        @id @default(cuid())
+  title              String
+  description        String
+  category           String?
+  image              String?
+  imageUrl           String?
+  originalPrice      Float
+  discountPrice      Float
+  platformFeePercent Float         @default(10)
+  startTime          DateTime
+  endTime            DateTime
+  status             String        @default("DRAFT")
+  isFeatured         Boolean       @default(false)
+  inventory          Int           @default(1)
+  sold               Int           @default(0)
+  sellerId           String
+  views              Int           @default(0)
+  clicks             Int           @default(0)
+  shares             Int           @default(0)
+  conversionRate     Float         @default(0)
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  seller             SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+  favorites          Favorite[]
+  purchases          Purchase[]
+  reviews            Review[]
 
-  // Pricing
-  originalPrice     Float
-  discountPrice     Float
-  platformFeePercent Float      @default(10)
-
-  // Time Window
-  startTime         DateTime
-  endTime           DateTime
-  status            String      @default("DRAFT") // ACTIVE, EXPIRED, DRAFT, HIDDEN, ARCHIVED
-
-  // Inventory
-  inventory         Int         @default(1)
-  sold              Int         @default(0)
-
-  // Relations
-  provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId        String
-
-  purchases         Purchase[]
-  reviews           Review[]
-  favorites         Favorite[]
-
-  // Analytics
-  views             Int         @default(0)
-  clicks            Int         @default(0)
-  shares            Int         @default(0)
-  conversionRate    Float       @default(0)
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@index([providerId])
+  @@index([sellerId])
   @@index([status])
   @@index([endTime])
   @@index([category])
 }
 
-// -------------------------------------------------------
-// PURCHASES / ORDERS
-// -------------------------------------------------------
-
 model Purchase {
-  id                String        @id @default(cuid())
-
-  // Relations
-  user              User          @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-
-  deal              Deal          @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  dealId            String
-
-  // Order Details
-  quantity          Int           @default(1)
-  subtotal          Float
-  platformFee       Float
-  total             Float
-
-  // Payment
-  status            String        @default("PENDING") // PENDING, PAID, FAILED, REFUNDED
-  stripeId          String?
-  paymentMethod     String?       // CARD, WALLET, BANK_TRANSFER
-
-  // Fulfillment
-  redeemed          Boolean       @default(false)
-  redeemedAt        DateTime?
-  couponCode        String?
-
-  // Refund
-  refunded          Boolean       @default(false)
-  refundReason      String?
-  refundedAt        DateTime?
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  id              String    @id @default(cuid())
+  userId          String
+  dealId          String
+  quantity        Int       @default(1)
+  subtotal        Float
+  platformFee     Float
+  total           Float
+  status          String    @default("PENDING")
+  stripeId        String?
+  transactionId   String?
+  paymentProvider String    @default("STRIPE")
+  paymentMethod   String?
+  redeemed        Boolean   @default(false)
+  redeemedAt      DateTime?
+  couponCode      String?
+  refunded        Boolean   @default(false)
+  refundReason    String?
+  refundedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  deal            Deal      @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([dealId])
@@ -212,212 +146,137 @@ model Purchase {
   @@index([createdAt])
 }
 
-// -------------------------------------------------------
-// WALLET
-// -------------------------------------------------------
-
 model Wallet {
-  id                String  @id @default(cuid())
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String  @unique
-
-  balance           Float   @default(0)
-  currency          String  @default("USD")
-  locked            Float   @default(0) // Funds on hold
-
-  transactions      WalletTransaction[]
-
-  updatedAt         DateTime @updatedAt
+  id           String              @id @default(cuid())
+  userId       String              @unique
+  balance      Float               @default(0)
+  currency     String              @default("USD")
+  locked       Float               @default(0)
+  updatedAt    DateTime            @updatedAt
+  user         User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions WalletTransaction[]
 }
 
 model WalletTransaction {
-  id                String  @id @default(cuid())
-
-  wallet            Wallet  @relation(fields: [walletId], references: [id], onDelete: Cascade)
-  walletId          String
-
-  type              String  // ADD_FUNDS, PURCHASE, REFUND, PAYOUT, ADJUSTMENT
-  amount            Float
-  balanceBefore     Float
-  balanceAfter      Float
-  note              String?
-  referenceId       String?
-
-  createdAt         DateTime @default(now())
+  id            String   @id @default(cuid())
+  walletId      String
+  type          String
+  amount        Float
+  balanceBefore Float
+  balanceAfter  Float
+  note          String?
+  referenceId   String?
+  createdAt     DateTime @default(now())
+  wallet        Wallet   @relation(fields: [walletId], references: [id], onDelete: Cascade)
 
   @@index([walletId])
   @@index([type])
 }
 
-// -------------------------------------------------------
-// REVIEWS & RATINGS
-// -------------------------------------------------------
-
 model Review {
-  id                String  @id @default(cuid())
+  id           String   @id @default(cuid())
+  dealId       String
+  userId       String
+  rating       Int
+  comment      String?
+  verified     Boolean  @default(true)
+  helpfulCount Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deal         Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
 
-  deal              Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  dealId            String
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-
-  rating            Int     // 1-5
-  comment           String?
-  verified          Boolean @default(true) // Only verified buyers can review
-
-  helpfulCount      Int     @default(0)
-
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-
-  @@unique([dealId, userId]) // One review per user per deal
+  @@unique([dealId, userId])
   @@index([dealId])
   @@index([rating])
 }
 
-// -------------------------------------------------------
-// FAVORITES / WISHLIST
-// -------------------------------------------------------
-
 model Favorite {
-  id                String  @id @default(cuid())
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-
-  deal              Deal    @relation(fields: [dealId], references: [id], onDelete: Cascade)
-  dealId            String
-
-  createdAt         DateTime @default(now())
+  id        String   @id @default(cuid())
+  userId    String
+  dealId    String
+  createdAt DateTime @default(now())
+  deal      Deal     @relation(fields: [dealId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, dealId])
   @@index([userId])
 }
 
-// -------------------------------------------------------
-// NOTIFICATIONS
-// -------------------------------------------------------
-
 model Notification {
-  id                String  @id @default(cuid())
-
-  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId            String
-
-  type              String  // ORDER_CONFIRMATION, PAYMENT_RECEIVED, DEAL_ENDING_SOON, NEW_DEAL, ACCOUNT_UPDATE, ADMIN_MESSAGE
-  title             String
-  content           String
-  link              String?
-  read              Boolean @default(false)
-  readAt            DateTime?
-
-  createdAt         DateTime @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  content   String
+  link      String?
+  read      Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([read])
 }
 
-// -------------------------------------------------------
-// PROVIDER ANALYTICS
-// -------------------------------------------------------
-
-model ProviderAnalytics {
-  id                String  @id @default(cuid())
-
-  provider          ProviderProfile @relation(fields: [providerId], references: [id], onDelete: Cascade)
-  providerId        String  @unique
-
-  totalDealsCreated Int     @default(0)
-  totalRevenue      Float   @default(0)
-  totalOrders       Int     @default(0)
-  totalViews        Int     @default(0)
-  totalClicks       Int     @default(0)
-
-  averageRating     Float   @default(0)
-  completionRate    Float   @default(0)
-  refundRate        Float   @default(0)
-
-  updatedAt         DateTime @updatedAt
+model SellerAnalytics {
+  id                String        @id @default(cuid())
+  sellerId          String        @unique
+  totalDealsCreated Int           @default(0)
+  totalRevenue      Float         @default(0)
+  totalOrders       Int           @default(0)
+  totalViews        Int           @default(0)
+  totalClicks       Int           @default(0)
+  averageRating     Float         @default(0)
+  completionRate    Float         @default(0)
+  refundRate        Float         @default(0)
+  updatedAt         DateTime      @updatedAt
+  seller            SellerProfile @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 }
-
-// -------------------------------------------------------
-// ADMIN SETTINGS (SUPER ADMIN PANEL)
-// -------------------------------------------------------
 
 model AdminSettings {
-  id                      String  @id @default(cuid())
-
-  // Platform Config
-  platformFeePercent      Float   @default(10)
-  minProviderPayout       Float   @default(100)
-  payoutFrequency         String  @default("WEEKLY") // DAILY, WEEKLY, MONTHLY
-
-  // Feature Flags
-  allowNewProviders       Boolean @default(true)
-  allowNewDeals           Boolean @default(true)
-  maintenanceMode         Boolean @default(false)
-  forcedMaintenanceTime   DateTime?
-
-  // Security
-  passwordExpireDays      Int     @default(90)
-  maxLoginAttempts        Int     @default(5)
-  lockoutDurationMinutes  Int     @default(30)
-
-  // Notification Settings
-  emailNotificationsEnabled Boolean @default(true)
-  smsNotificationsEnabled  Boolean @default(false)
-
-  updatedAt               DateTime @updatedAt
+  id                        String    @id @default(cuid())
+  platformFeePercent        Float     @default(10)
+  minSellerPayout           Float     @default(100)
+  payoutFrequency           String    @default("WEEKLY")
+  allowNewSellers           Boolean   @default(true)
+  allowNewDeals             Boolean   @default(true)
+  maintenanceMode           Boolean   @default(false)
+  forcedMaintenanceTime     DateTime?
+  passwordExpireDays        Int       @default(90)
+  maxLoginAttempts          Int       @default(5)
+  lockoutDurationMinutes    Int       @default(30)
+  emailNotificationsEnabled Boolean   @default(true)
+  smsNotificationsEnabled   Boolean   @default(false)
+  updatedAt                 DateTime  @updatedAt
 }
 
-// -------------------------------------------------------
-// AUDIT LOG (For Admin Activities)
-// -------------------------------------------------------
-
 model AuditLog {
-  id                String  @id @default(cuid())
-
-  action            String  // USER_CREATED, DEAL_APPROVED, etc.
-  entity            String  // User, Deal, Provider
-  entityId          String
-  details           String
-
-  createdAt         DateTime @default(now())
+  id        String   @id @default(cuid())
+  action    String
+  entity    String
+  entityId  String
+  details   String
+  createdAt DateTime @default(now())
 
   @@index([action])
   @@index([entity])
   @@index([createdAt])
 }
 
-// -------------------------------------------------------
-// COUPON / PROMO CODE
-// -------------------------------------------------------
-
 model Coupon {
-  id                String  @id @default(cuid())
-
-  code              String  @unique
+  id                String   @id @default(cuid())
+  code              String   @unique
   description       String?
-
-  // Discount
-  discountType      String  // PERCENTAGE, FIXED
+  discountType      String
   discountValue     Float
-
-  // Restrictions
   maxUses           Int?
-  maxUsesPerUser    Int     @default(1)
-  minPurchaseAmount Float   @default(0)
-
-  // Validity
+  maxUsesPerUser    Int      @default(1)
+  minPurchaseAmount Float    @default(0)
   validFrom         DateTime
   validUntil        DateTime
-  active            Boolean @default(true)
-
-  // Stats
-  timesUsed         Int     @default(0)
-
+  active            Boolean  @default(true)
+  timesUsed         Int      @default(0)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 

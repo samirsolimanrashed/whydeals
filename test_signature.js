@@ -1,0 +1,44 @@
+const crypto = require('crypto');
+
+const SECRET_KEY = '2M@7w4EHV#&KN%fUFB2HrD*euQ8j2c674QhN85AqwYGuR95EaS$7GKD8pMddnz?u';
+const MERCHANT_CODE = '255796769802';
+
+const params = {
+    merchant: MERCHANT_CODE,
+    dynamic: '1',
+    currency: 'USD',
+    'return-type': 'redirect',
+    expiration: (Math.floor(Date.now() / 1000) + 3600).toString(),
+    ref_no: 'TEST_REF_' + Date.now(),
+    prod: 'Test Product',
+    price: '10.00',
+    qty: '1',
+    type: 'PRODUCT',
+    tangible: '0'
+};
+
+// 1. Sort keys alphabetically
+const sortedKeys = Object.keys(params).sort();
+
+// 2. Serialize: LEN(VALUE) + VALUE
+let stringToSign = '';
+sortedKeys.forEach(key => {
+    const value = params[key];
+    stringToSign += value.length + value;
+});
+
+// 3. HMAC-SHA256
+const signature = crypto.createHmac('sha256', SECRET_KEY).update(stringToSign).digest('hex');
+
+// 4. Add signature to params
+params.signature = signature;
+
+// Construct URL
+const queryString = Object.keys(params)
+    .map(key => `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`)
+    .join('&');
+
+const url = `https://secure.2checkout.com/checkout/buy?${queryString}&algo=sha256&debug=1`;
+
+console.log('Generated URL:', url);
+console.log('String to Sign:', stringToSign);

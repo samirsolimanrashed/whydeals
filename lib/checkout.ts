@@ -13,7 +13,7 @@ export async function createCheckoutSession({ dealId, quantity = 1, userId }: { 
   if (quantity > available) throw new Error(`Only ${available} remaining`)
 
   const subtotal = (deal.discountPrice ?? 0) * quantity
-  const platformFeePercent = deal.platformFeePercent || 10
+  const platformFeePercent = deal.platformFeePercent || 40
   const platformFee = Number((subtotal * (platformFeePercent / 100)).toFixed(2))
   const total = Number((subtotal + platformFee).toFixed(2))
 
@@ -49,7 +49,7 @@ export async function createCheckoutSession({ dealId, quantity = 1, userId }: { 
           currency: 'usd',
           product_data: {
             name: 'Platform Fee',
-            description: 'Why Deals platform fee (5%)',
+            description: 'Why Deals platform fee (40%)',
           },
           unit_amount: Math.round(platformFee * 100),
         },

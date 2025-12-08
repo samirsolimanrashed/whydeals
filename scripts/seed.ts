@@ -15,9 +15,9 @@ async function seed() {
     await prisma.notification.deleteMany();
     await prisma.purchase.deleteMany();
     await prisma.deal.deleteMany();
-    await prisma.providerAnalytics.deleteMany();
+    await prisma.sellerAnalytics.deleteMany();
     await prisma.payoutAccount.deleteMany();
-    await prisma.providerProfile.deleteMany();
+    await prisma.sellerProfile.deleteMany();
     await prisma.session.deleteMany();
     await prisma.auditLog.deleteMany();
     await prisma.adminSettings.deleteMany();
@@ -30,9 +30,9 @@ async function seed() {
     await prisma.adminSettings.create({
       data: {
         platformFeePercent: 10,
-        minProviderPayout: 100,
+        minSellerPayout: 100,
         payoutFrequency: "WEEKLY",
-        allowNewProviders: true,
+        allowNewSellers: true,
         allowNewDeals: true,
         maintenanceMode: false,
         passwordExpireDays: 90,
@@ -109,7 +109,7 @@ async function seed() {
     console.log("✅ Created 5 users (1 admin, 2 customers, 2 providers)");
 
     // Create provider profiles
-    const providerProfile1 = await prisma.providerProfile.create({
+    const sellerProfile1 = await prisma.sellerProfile.create({
       data: {
         userId: provider1.id,
         businessName: "Tech Store Solutions",
@@ -125,7 +125,7 @@ async function seed() {
       },
     });
 
-    const providerProfile2 = await prisma.providerProfile.create({
+    const sellerProfile2 = await prisma.sellerProfile.create({
       data: {
         userId: provider2.id,
         businessName: "Fashion Hub Inc",
@@ -146,7 +146,7 @@ async function seed() {
     // Create payout accounts
     await prisma.payoutAccount.create({
       data: {
-        providerId: providerProfile1.id,
+        sellerId: sellerProfile1.id,
         accountHolder: "Tech Store Solutions LLC",
         bankName: "Chase Bank",
         accountNumber: "1234567890",
@@ -159,7 +159,7 @@ async function seed() {
 
     await prisma.payoutAccount.create({
       data: {
-        providerId: providerProfile2.id,
+        sellerId: sellerProfile2.id,
         accountHolder: "Fashion Hub Inc",
         bankName: "Bank of America",
         accountNumber: "0987654321",
@@ -173,9 +173,9 @@ async function seed() {
     console.log("✅ Created 2 payout accounts");
 
     // Create provider analytics
-    await prisma.providerAnalytics.create({
+    await prisma.sellerAnalytics.create({
       data: {
-        providerId: providerProfile1.id,
+        sellerId: sellerProfile1.id,
         totalDealsCreated: 0,
         totalRevenue: 0,
         totalOrders: 0,
@@ -187,9 +187,9 @@ async function seed() {
       },
     });
 
-    await prisma.providerAnalytics.create({
+    await prisma.sellerAnalytics.create({
       data: {
-        providerId: providerProfile2.id,
+        sellerId: sellerProfile2.id,
         totalDealsCreated: 0,
         totalRevenue: 0,
         totalOrders: 0,
@@ -291,7 +291,7 @@ async function seed() {
         status: "ACTIVE",
         inventory: 50,
         sold: 5,
-        providerId: providerProfile1.id,
+        sellerId: sellerProfile1.id,
         views: 250,
         clicks: 45,
         shares: 8,
@@ -313,7 +313,7 @@ async function seed() {
         status: "ACTIVE",
         inventory: 30,
         sold: 3,
-        providerId: providerProfile1.id,
+        sellerId: sellerProfile1.id,
         views: 180,
         clicks: 32,
         shares: 5,
@@ -335,7 +335,7 @@ async function seed() {
         status: "ACTIVE",
         inventory: 100,
         sold: 12,
-        providerId: providerProfile2.id,
+        sellerId: sellerProfile2.id,
         views: 420,
         clicks: 78,
         shares: 15,
@@ -357,7 +357,7 @@ async function seed() {
         status: "ACTIVE",
         inventory: 75,
         sold: 8,
-        providerId: providerProfile2.id,
+        sellerId: sellerProfile2.id,
         views: 310,
         clicks: 55,
         shares: 10,
@@ -379,7 +379,7 @@ async function seed() {
         status: "ACTIVE",
         inventory: 20,
         sold: 2,
-        providerId: providerProfile1.id,
+        sellerId: sellerProfile1.id,
         views: 150,
         clicks: 22,
         shares: 3,

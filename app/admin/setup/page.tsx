@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { RocketLaunchIcon } from '@heroicons/react/24/outline';
 
 export default function AdminSetupPage() {
   const router = useRouter();
@@ -80,7 +81,7 @@ export default function AdminSetupPage() {
 
   if (success) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-neutral-100 flex items-center justify-center px-4">
         <Card className="max-w-md w-full p-8 text-center">
           <div className="text-4xl mb-4">✅</div>
           <h1 className="text-2xl font-bold text-neutral-900 mb-2">
@@ -95,13 +96,14 @@ export default function AdminSetupPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
+    <div className="min-h-screen bg-neutral-100">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-md mx-auto">
           <Card className="p-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-neutral-900 mb-2">
-                🚀 Super Admin Setup
+                <RocketLaunchIcon className="w-5 h-5 mr-2" />
+                Super Admin Setup
               </h1>
               <p className="text-neutral-600">
                 Create your Super Admin account to manage the Why Deals platform
@@ -125,7 +127,7 @@ export default function AdminSetupPage() {
                   value={formData.name}
                   onChange={handleChange}
                   placeholder="John Doe"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-blue"
                 />
               </div>
 
@@ -139,7 +141,7 @@ export default function AdminSetupPage() {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="admin@whydeals.com"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-blue"
                 />
               </div>
 
@@ -153,7 +155,7 @@ export default function AdminSetupPage() {
                   value={formData.password}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-blue"
                 />
                 <p className="text-xs text-neutral-500 mt-1">
                   Minimum 8 characters
@@ -170,7 +172,7 @@ export default function AdminSetupPage() {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-blue-500"
+                  className="w-full px-4 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:border-primary-blue"
                 />
               </div>
 
@@ -185,8 +187,8 @@ export default function AdminSetupPage() {
               </Button>
             </form>
 
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-xs text-blue-700">
+            <div className="mt-6 p-4 bg-primary-blue/5 border border-primary-blue/20 rounded-lg">
+              <p className="text-xs text-primary-blue">
                 <strong>⚠️ Important:</strong> This is a one-time setup. After creation, you won't be able to create another Super Admin account.
               </p>
             </div>

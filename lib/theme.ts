@@ -67,4 +67,4 @@ export const buttonVariants = {
   outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50',
 };
 
-export const cardStyles = 'bg-white rounded-xl shadow-sm hover:shadow-md transition-shadow border border-neutral-100';
+export const cardStyles = 'bg-surface dark:bg-navy-dark rounded-xl shadow-sm hover:shadow-md transition-shadow border border-neutral-100';

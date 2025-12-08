@@ -1,86 +1,79 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 
 interface CountdownTimerProps {
-  endDate: Date | string
-  onComplete?: () => void
+  endTime: Date | string
+  className?: string
 }
 
-export default function CountdownTimer({ endDate, onComplete }: CountdownTimerProps) {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  })
-  const [isExpired, setIsExpired] = useState(false)
+interface TimeLeft {
+  days: number
+  hours: number
+  minutes: number
+  seconds: number
+  expired: boolean
+}
 
-  useEffect(() => {
-    const calculateTimeLeft = () => {
-      const end = new Date(endDate).getTime()
-      const now = new Date().getTime()
-      const difference = end - now
+export function CountdownTimer({ endTime, className = '' }: CountdownTimerProps) {
+  const [timeLeft, setTimeLeft] = useState<TimeLeft>(calculateTimeLeft())
 
-      if (difference <= 0) {
-        setIsExpired(true)
-        if (onComplete) {
-          onComplete()
-        }
-        return {
-          days: 0,
-          hours: 0,
-          minutes: 0,
-          seconds: 0,
-        }
-      }
+  function calculateTimeLeft(): TimeLeft {
+    const end = new Date(endTime).getTime()
+    const now = new Date().getTime()
+    const difference = end - now
 
-      return {
-        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
-        hours: Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)),
-        minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
-        seconds: Math.floor((difference % (1000 * 60)) / 1000),
-      }
+    if (difference <= 0) {
+      return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true }
     }
 
-    setTimeLeft(calculateTimeLeft())
+    return {
+      days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+      hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+      minutes: Math.floor((difference / 1000 / 60) % 60),
+      seconds: Math.floor((difference / 1000) % 60),
+      expired: false,
+    }
+  }
+
+  useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft())
     }, 1000)
 
     return () => clearInterval(timer)
-  }, [endDate, onComplete])
+  }, [endTime])
 
-  if (isExpired) {
+  if (timeLeft.expired) {
     return (
-      <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg text-center">
-        <span className="font-semibold">Deal Expired</span>
+      <div className={`text-error-red font-semibold ${className}`}>
+        Deal Expired
       </div>
     )
   }
 
   return (
-    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-      <p className="text-sm text-gray-600 mb-2 text-center">Time Remaining</p>
-      <div className="flex justify-center space-x-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{timeLeft.days}</div>
-          <div className="text-xs text-gray-500">Days</div>
+    <div className={`flex gap-2 items-center ${className}`}>
+      {timeLeft.days > 0 && (
+        <div className="flex flex-col items-center px-2 py-1 rounded border border-neutral-black text-neutral-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+          <span className="text-lg font-bold">{timeLeft.days}</span>
+          <span className="text-xs">days</span>
         </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{String(timeLeft.hours).padStart(2, '0')}</div>
-          <div className="text-xs text-gray-500">Hours</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{String(timeLeft.minutes).padStart(2, '0')}</div>
-          <div className="text-xs text-gray-500">Minutes</div>
-        </div>
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-600">{String(timeLeft.seconds).padStart(2, '0')}</div>
-          <div className="text-xs text-gray-500">Seconds</div>
-        </div>
+      )}
+      <div className="flex flex-col items-center px-2 py-1 rounded border border-neutral-black text-neutral-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+        <span className="text-lg font-bold">{String(timeLeft.hours).padStart(2, '0')}</span>
+        <span className="text-xs">hrs</span>
+      </div>
+      <span className="text-xl font-bold text-foreground">:</span>
+      <div className="flex flex-col items-center px-2 py-1 rounded border border-neutral-black text-neutral-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+        <span className="text-lg font-bold">{String(timeLeft.minutes).padStart(2, '0')}</span>
+        <span className="text-xs">min</span>
+      </div>
+      <span className="text-xl font-bold text-foreground">:</span>
+      <div className="flex flex-col items-center px-2 py-1 rounded border border-neutral-black text-neutral-black dark:border-neutral-700 dark:bg-neutral-900 dark:text-white">
+        <span className="text-lg font-bold">{String(timeLeft.seconds).padStart(2, '0')}</span>
+        <span className="text-xs">sec</span>
       </div>
     </div>
   )
 }
-

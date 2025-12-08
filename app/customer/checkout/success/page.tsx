@@ -1,81 +1,50 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { useSearchParams, useRouter } from 'next/navigation'
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
 import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { useEffect } from 'react'
+import { toast } from 'sonner'
 
 export default function CheckoutSuccessPage() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const sessionId = searchParams.get('session_id')
-  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Verify payment was successful
     if (sessionId) {
-      // TODO: Verify session with Stripe
-      setLoading(false)
-    } else {
-      router.push('/')
+      // Optional: Verify session status via API if needed
+      toast.success('Payment successful!')
     }
-  }, [sessionId, router])
-
-  if (loading) {
-    return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p>Verifying payment...</p>
-      </div>
-    )
-  }
+  }, [sessionId])
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-2xl">
-      <div className="bg-white rounded-lg shadow-md p-8 text-center">
-        <div className="mb-6">
-          <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <svg
-              className="w-8 h-8 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold mb-2">Payment Successful!</h1>
-          <p className="text-gray-600">
-            Your purchase has been confirmed. You'll receive an email confirmation shortly.
-          </p>
+    <div className="min-h-screen bg-background py-12 px-4 flex justify-center items-center">
+      <Card className="max-w-md w-full p-8 text-center dark:bg-navy-dark dark:border-neutral-700">
+        <div className="w-20 h-20 bg-success-green/10 rounded-full flex items-center justify-center mx-auto mb-6">
+          <svg className="w-10 h-10 text-success-green" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
         </div>
+
+        <h1 className="text-3xl font-bold text-navy-dark dark:text-foreground mb-4">Payment Successful!</h1>
+        <p className="text-foreground/70 mb-8">
+          Thank you for your purchase. You will receive a confirmation email shortly.
+        </p>
 
         <div className="space-y-4">
-          <div className="bg-gray-50 rounded-lg p-4 text-left">
-            <p className="text-sm text-gray-600 mb-1">Session ID</p>
-            <p className="font-mono text-sm">{sessionId}</p>
-          </div>
-
-          <div className="flex gap-4 justify-center">
-            <Link
-              href="/customer/account"
-              className="px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition"
-            >
-              View My Purchases
-            </Link>
-            <Link
-              href="/"
-              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition"
-            >
+          <Link href="/customer/account">
+            <Button variant="primary" size="lg" className="w-full">
+              View My Orders
+            </Button>
+          </Link>
+          <Link href="/">
+            <Button variant="outline" size="lg" className="w-full">
               Continue Shopping
-            </Link>
-          </div>
+            </Button>
+          </Link>
         </div>
-      </div>
+      </Card>
     </div>
   )
 }
-

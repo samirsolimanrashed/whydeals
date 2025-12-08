@@ -1,0 +1,17 @@
+https://secure.2checkout.com/checkout/buy?merchant=255796769802&dynamic=1&currency=USD&return-type=redirect&expiration=1764712752&ref_no=ORD_1764709152595_cmi8n&return-url=http%3A%2F%2Flocalhost%3A3006%2Fcustomer%2Fcheckout%2Fcallback&prod=Premium%20UI%20Bundle&price=29.00&qty=3&type=PRODUCT&tangible=0&signature=e2575ee6719bfae4baec3436098009d0d1d76a9ead8f46e6b682440b6f8274c7&algo=sha256
+{
+  "merchant": "255796769802",
+  "dynamic": "1",
+  "currency": "USD",
+  "return-type": "redirect",
+  "expiration": "1764712752",
+  "ref_no": "ORD_1764709152595_cmi8n",
+  "return-url": "http://localhost:3006/customer/checkout/callback",
+  "prod": "Premium UI Bundle",
+  "price": "29.00",
+  "qty": "3",
+  "type": "PRODUCT",
+  "tangible": "0",
+  "signature": "e2575ee6719bfae4baec3436098009d0d1d76a9ead8f46e6b682440b6f8274c7"
+}
+String to sign: 3USD11101764712752529.0017Premium UI Bundle1323ORD_1764709152595_cmi8n8redirect48http://localhost:3006/customer/checkout/callback107PRODUCT

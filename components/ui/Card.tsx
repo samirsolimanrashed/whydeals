@@ -10,8 +10,8 @@ export const Card: React.FC<CardProps> = ({ children, className = '', hover = tr
   return (
     <div
       className={`
-        bg-white rounded-xl border border-neutral-100 shadow-sm
-        ${hover ? 'hover:shadow-lg hover:border-blue-200 transition-all duration-300' : ''}
+        bg-surface rounded-xl border border-neutral-200 dark:border-neutral-700 shadow-sm
+        ${hover ? 'hover:shadow-md hover:border-neutral-300 dark:hover:border-neutral-600 transition-all duration-300' : ''}
         ${className}
       `}
     >

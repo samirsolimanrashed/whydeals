@@ -57,9 +57,9 @@ export async function POST(req: NextRequest) {
     await prisma.adminSettings.create({
       data: {
         platformFeePercent: 10,
-        minProviderPayout: 100,
+        minSellerPayout: 100,
         payoutFrequency: 'WEEKLY',
-        allowNewProviders: true,
+        allowNewSellers: true,
         allowNewDeals: true,
         maintenanceMode: false,
         emailNotificationsEnabled: true,

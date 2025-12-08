@@ -1,10 +1,11 @@
 import React from 'react';
+import { ArrowPathIcon } from '@heroicons/react/24/outline';
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'accent' | 'outline';
+  variant?: 'primary' | 'secondary' | 'accent' | 'outline' | 'ghost';
   size?: 'sm' | 'md' | 'lg';
   isLoading?: boolean;
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -15,13 +16,14 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props
 }) => {
-  const baseStyles = 'font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  
+  const baseStyles = 'font-medium rounded-lg transition-all duration-200 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed active:scale-95 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-blue dark:focus:ring-offset-navy-dark';
+
   const variants = {
-    primary: 'bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-md hover:shadow-lg',
-    secondary: 'bg-neutral-100 hover:bg-neutral-200 text-neutral-900 border border-neutral-300',
-    accent: 'bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white shadow-md hover:shadow-lg',
-    outline: 'border-2 border-blue-600 text-blue-600 hover:bg-blue-50',
+    primary: 'bg-primary-blue hover:bg-neutral-800 dark:hover:bg-neutral-700 text-foreground hover:text-white dark:hover:text-white shadow-sm hover:shadow-lg border border-primary-blue hover:border-neutral-800 dark:hover:border-neutral-700',
+    secondary: 'bg-surface border-2 border-neutral-200 dark:border-neutral-700 text-foreground hover:bg-neutral-800 dark:hover:bg-neutral-700 hover:text-white dark:hover:text-white hover:border-neutral-800 dark:hover:border-neutral-700 shadow-sm',
+    accent: 'bg-violet-accent hover:bg-neutral-800 dark:hover:bg-neutral-700 text-foreground hover:text-white dark:hover:text-white shadow-sm hover:shadow-lg border border-violet-accent hover:border-neutral-800 dark:hover:border-neutral-700',
+    outline: 'border-2 border-neutral-300 dark:border-neutral-600 text-foreground hover:bg-neutral-800 dark:hover:bg-neutral-700 hover:text-white dark:hover:text-white hover:border-neutral-800 dark:hover:border-neutral-700 transition-colors',
+    ghost: 'bg-transparent hover:bg-neutral-800 dark:hover:bg-neutral-700 text-foreground/70 hover:text-white dark:hover:text-white border border-transparent hover:border-neutral-800 dark:hover:border-neutral-700',
   };
 
   const sizes = {
@@ -33,11 +35,12 @@ export const Button: React.FC<ButtonProps> = ({
   return (
     <button
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${className}`}
-      disabled={isLoading}
+      disabled={isLoading || props.disabled}
       {...props}
     >
-      {isLoading && <span className="animate-spin">⏳</span>}
+      {isLoading && <ArrowPathIcon className="w-4 h-4 animate-spin" />}
       {children}
     </button>
   );
 };
+

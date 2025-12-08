@@ -1,14 +1,20 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useSession, signOut } from 'next-auth/react'
+import { ShoppingCartIcon } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 import { Button } from './ui/Button'
+import { useCart } from '@/context/CartContext'
+import Logo from './Logo'
 
-type UserRole = 'CUSTOMER' | 'PROVIDER' | 'ADMIN' | 'SUPERADMIN' | null
+
+type UserRole = 'CUSTOMER' | 'SELLER' | 'ADMIN' | 'SUPERADMIN' | null
 
 export default function Navbar() {
   const { data: session, status } = useSession()
+  const { totalItems } = useCart()
   const [role, setRole] = useState<UserRole>(null)
   const [loading, setLoading] = useState(true)
 
@@ -41,14 +47,13 @@ export default function Navbar() {
 
   // Render CTA button based on role
   const renderCTA = () => {
-    // 1) Not logged in → Show "Sell Your Deal"
+    // 1) Not logged in → Show "Become a Seller"
     if (status === 'unauthenticated') {
       return (
-        <Link
-          href="/auth/signup"
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors"
-        >
-          Sell Your Deal
+        <Link href="/become-seller">
+          <Button variant="primary" size="sm">
+            Become a Seller
+          </Button>
         </Link>
       )
     }
@@ -65,56 +70,53 @@ export default function Navbar() {
     // 2) Admin/SuperAdmin → Admin Dashboard
     if (role === 'SUPERADMIN' || role === 'ADMIN') {
       return (
-        <Link
-          href="/admin/dashboard"
-          className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700 font-medium transition-colors"
-        >
-          Admin Dashboard
+        <Link href="/admin/dashboard">
+          <Button variant="accent" size="sm">
+            Admin Dashboard
+          </Button>
         </Link>
       )
     }
 
-    // 3) Provider → Partner Dashboard
-    if (role === 'PROVIDER') {
+    // 3) Seller → Seller Dashboard
+    if (role === 'SELLER') {
       return (
-        <Link
-          href="/provider/dashboard"
-          className="px-4 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 font-medium transition-colors"
-        >
-          Partner Dashboard
+        <Link href="/seller/dashboard">
+          <Button variant="accent" size="sm">
+            Seller Dashboard
+          </Button>
         </Link>
       )
     }
 
-    // 4) Customer → Show Sell Your Deal CTA
+    // 4) Customer → Show "Become a Seller" CTA
     if (role === 'CUSTOMER') {
       return (
-        <Link
-          href="/auth/signup"
-          className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors"
-        >
-          Sell Your Deal
+        <Link href="/become-seller">
+          <Button variant="primary" size="sm">
+            Become a Seller
+          </Button>
         </Link>
       )
     }
   }
 
   return (
-    <nav className="bg-white border-b border-neutral-200 sticky top-0 z-50 shadow-sm">
+    <nav className="border-b border-neutral-300 dark:border-neutral-700 sticky top-0 z-50 shadow-sm bg-background backdrop-blur-sm">
       <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
         {/* Logo */}
+        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 group">
-          <span className="text-2xl">🎁</span>
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:to-pink-700 transition-all">
-            Why Deals
-          </h1>
+          <div className="h-10 w-40 relative">
+            <Logo className="w-full h-full" />
+          </div>
         </Link>
 
         {/* Navigation Links */}
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className="text-neutral-600 hover:text-blue-600 font-medium transition-colors"
+            className="text-foreground hover:text-primary-blue font-medium transition-colors"
           >
             Deals
           </Link>
@@ -123,11 +125,24 @@ export default function Navbar() {
           {session?.user && (
             <Link
               href="/customer/account"
-              className="text-neutral-600 hover:text-blue-600 font-medium transition-colors"
+              className="text-foreground hover:text-primary-blue font-medium transition-colors"
             >
               My Account
             </Link>
           )}
+
+
+
+
+          {/* Cart Icon */}
+          <Link href="/cart" className="relative p-2 text-foreground hover:text-primary-blue transition-colors group">
+            <ShoppingCartIcon className="h-6 w-6 text-foreground group-hover:text-primary-blue transition-colors" />
+            {totalItems > 0 && (
+              <span className="absolute -top-1 -right-1 bg-error-red text-foreground text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center border-2 border-foreground">
+                {totalItems}
+              </span>
+            )}
+          </Link>
 
           {/* CTA Button Logic */}
           {renderCTA()}
@@ -135,7 +150,7 @@ export default function Navbar() {
           {/* Auth Section */}
           {session?.user ? (
             <div className="flex items-center gap-4">
-              <span className="text-neutral-600 text-sm">
+              <span className="text-foreground/70 text-sm hidden md:block">
                 {session.user.name || session.user.email}
               </span>
               <Button

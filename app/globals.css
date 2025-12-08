@@ -2,21 +2,35 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@media (prefers-color-scheme: dark) {
+@layer base {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    /* Light mode colors - Modern Navy & Clean White with Light Blue Background */
+    --background: 240 249 255;
+    /* Very Light Blue - Sky 50 */
+    --background-alt: 224 242 254;
+    /* Light Blue - Sky 100 */
+    --foreground: 10 25 47;
+    /* Deep Navy Text */
+    --surface: 255 255 255;
+    /* White for cards */
+  }
+
+  .dark {
+    /* Dark mode colors - Rich Navy */
+    --background: 2 12 27;
+    /* Deepest Navy */
+    --background-alt: 10 25 47;
+    /* Dark Navy */
+    --foreground: 230 241 255;
+    /* Off-White */
+    --surface: 17 34 64;
+    /* Light Navy Surface */
   }
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  background-color: rgb(var(--background));
+  color: rgb(var(--foreground));
   font-family: Arial, Helvetica, sans-serif;
 }
 
@@ -25,4 +39,3 @@ body {
     text-wrap: balance;
   }
 }
-

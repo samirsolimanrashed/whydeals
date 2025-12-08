@@ -1,163 +1,151 @@
-'use client';
+'use client'
 
-import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/Card';
-import { Button } from '@/components/ui/Button';
-
-interface Provider {
-  id: string;
-  businessName: string;
-  businessEmail: string;
-  approved: boolean;
-  createdAt: string;
-}
-
-interface Stats {
-  totalUsers: number;
-  totalProviders: number;
-  totalDeals: number;
-  totalRevenue: number;
-}
+import { Button } from '@/components/ui/Button'
+import { Card } from '@/components/ui/Card'
+import { toast } from 'sonner'
+import { useEffect, useState } from 'react'
+import Link from 'next/link'
 
 export default function AdminDashboard() {
-  const { data: session } = useSession();
-  const router = useRouter();
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState<any[]>([])
+  const [recentUsers, setRecentUsers] = useState<any[]>([])
+  const [pendingDeals, setPendingDeals] = useState<any[]>([])
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (!session) {
-      router.push('/auth/signin');
-      return;
-    }
-
-    if (session?.user?.role !== 'SUPERADMIN' && session?.user?.role !== 'ADMIN') {
-      router.push('/');
-      return;
-    }
-
-    const fetchData = async () => {
+    const fetchStats = async () => {
       try {
-        const statsRes = await fetch('/api/admin/stats');
-        const statsData = await statsRes.json();
-        setStats(statsData);
-
-        const providersRes = await fetch('/api/admin/providers');
-        const providersData = await providersRes.json();
-        setProviders(providersData.data || []);
+        const res = await fetch('/api/admin/stats')
+        if (!res.ok) throw new Error('Failed to fetch stats')
+        const data = await res.json()
+        setStats(data.stats)
+        setRecentUsers(data.recentUsers)
+        setPendingDeals(data.pendingDeals)
       } catch (error) {
-        console.error('Failed to fetch admin data:', error);
+        console.error(error)
+        toast.error('Failed to load dashboard data')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
-    };
-
-    fetchData();
-  }, [session, router]);
-
-  const handleApproveProvider = async (providerId: string) => {
-    try {
-      const response = await fetch(`/api/admin/providers/${providerId}/approve`, {
-        method: 'PATCH',
-      });
-
-      if (response.ok) {
-        setProviders(prev =>
-          prev.map(p => p.id === providerId ? { ...p, approved: true } : p)
-        );
-      }
-    } catch (error) {
-      console.error('Failed to approve provider:', error);
     }
-  };
+
+    fetchStats()
+  }, [])
+
+  const handleApproveDeal = async (dealId: string) => {
+    try {
+      const res = await fetch(`/api/admin/deals/${dealId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'ACTIVE' }),
+      })
+      if (!res.ok) throw new Error('Failed to approve deal')
+      toast.success('Deal approved')
+      // Refresh data
+      setPendingDeals(pendingDeals.filter(d => d.id !== dealId))
+    } catch (error) {
+      toast.error('Failed to approve deal')
+    }
+  }
+
+  const handleRejectDeal = async (dealId: string) => {
+    try {
+      const res = await fetch(`/api/admin/deals/${dealId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'REJECTED' }),
+      })
+      if (!res.ok) throw new Error('Failed to reject deal')
+      toast.success('Deal rejected')
+      setPendingDeals(pendingDeals.filter(d => d.id !== dealId))
+    } catch (error) {
+      toast.error('Failed to reject deal')
+    }
+  }
 
   if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
-        <p className="text-neutral-600">Loading admin dashboard...</p>
-      </div>
-    );
+    return <div className="p-8 text-center">Loading dashboard...</div>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
-      <div className="container mx-auto px-4 py-12">
-        <h1 className="text-4xl font-bold text-neutral-900 mb-8">Admin Dashboard</h1>
-
-        {stats && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-            <Card className="p-6">
-              <p className="text-neutral-600 text-sm mb-2">Total Users</p>
-              <p className="text-3xl font-bold text-blue-600">{stats.totalUsers}</p>
-            </Card>
-            <Card className="p-6">
-              <p className="text-neutral-600 text-sm mb-2">Total Providers</p>
-              <p className="text-3xl font-bold text-green-600">{stats.totalProviders}</p>
-            </Card>
-            <Card className="p-6">
-              <p className="text-neutral-600 text-sm mb-2">Total Deals</p>
-              <p className="text-3xl font-bold text-purple-600">{stats.totalDeals}</p>
-            </Card>
-            <Card className="p-6">
-              <p className="text-neutral-600 text-sm mb-2">Total Revenue</p>
-              <p className="text-3xl font-bold text-orange-600">${stats.totalRevenue.toFixed(2)}</p>
-            </Card>
+    <div className="min-h-screen bg-neutral-100 dark:bg-navy-dark p-8">
+      <div className="max-w-7xl mx-auto space-y-8">
+        {/* Header */}
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-navy-dark dark:text-foreground">Super Admin</h1>
+            <p className="text-foreground/70">Platform Overview</p>
           </div>
-        )}
+          <div className="flex gap-3">
+            <Link href="/admin/users">
+              <Button variant="outline" size="sm">Manage Users</Button>
+            </Link>
+            <Link href="/admin/deals">
+              <Button variant="outline" size="sm">Manage All Deals</Button>
+            </Link>
+            <Link href="/coming-soon">
+              <Button variant="primary" size="sm">Settings</Button>
+            </Link>
+          </div>
+        </div>
 
-        <Card className="p-6">
-          <h2 className="text-2xl font-bold text-neutral-900 mb-6">Providers Management</h2>
-          
-          {providers.length === 0 ? (
-            <p className="text-neutral-600">No providers found</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead>
-                  <tr className="border-b border-neutral-200">
-                    <th className="text-left py-3 px-4 font-semibold text-neutral-900">Business Name</th>
-                    <th className="text-left py-3 px-4 font-semibold text-neutral-900">Email</th>
-                    <th className="text-left py-3 px-4 font-semibold text-neutral-900">Status</th>
-                    <th className="text-left py-3 px-4 font-semibold text-neutral-900">Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {providers.map(provider => (
-                    <tr key={provider.id} className="border-b border-neutral-100 hover:bg-neutral-50">
-                      <td className="py-3 px-4 text-neutral-900">{provider.businessName}</td>
-                      <td className="py-3 px-4 text-neutral-600">{provider.businessEmail}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          provider.approved
-                            ? 'bg-green-100 text-green-700'
-                            : 'bg-yellow-100 text-yellow-700'
-                        }`}>
-                          {provider.approved ? 'Approved' : 'Pending'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-4">
-                        {!provider.approved && (
-                          <Button
-                            size="sm"
-                            variant="primary"
-                            onClick={() => handleApproveProvider(provider.id)}
-                          >
-                            Approve
-                          </Button>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+        {/* Stats Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {stats.map((stat, index) => (
+            <Card key={index} className="p-6 dark:bg-navy-dark dark:border-neutral-700">
+              <p className="text-sm font-medium text-foreground/70">{stat.label}</p>
+              <h3 className={`text-3xl font-bold mt-2 ${stat.color}`}>{stat.value}</h3>
+              <p className="text-xs text-foreground/60 mt-2">
+                <span className="text-success-green font-bold">{stat.change}</span> vs last month
+              </p>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Recent Users */}
+          <Card className="p-6 dark:bg-navy-dark dark:border-neutral-700">
+            <h2 className="text-xl font-bold text-navy-dark dark:text-foreground mb-4">New Users</h2>
+            <div className="space-y-4">
+              {recentUsers.map((user) => (
+                <div key={user.id} className="flex items-center justify-between p-3 bg-neutral-50 dark:bg-neutral-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 bg-neutral-200 dark:bg-neutral-700 rounded-full flex items-center justify-center text-lg">
+                      {user.avatar ? <img src={user.avatar} className="w-full h-full rounded-full" /> : user.name?.[0]}
+                    </div>
+                    <div>
+                      <p className="font-bold text-navy-dark dark:text-foreground">{user.name || 'Unnamed User'}</p>
+                      <p className="text-xs text-foreground/70">{user.email}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs bg-primary-blue/10 text-primary-blue px-2 py-1 rounded">{user.role}</span>
+                </div>
+              ))}
+              {recentUsers.length === 0 && <p className="text-foreground/50 text-center py-4">No recent users</p>}
             </div>
-          )}
-        </Card>
+          </Card>
+
+          {/* Pending Approvals (Deals) */}
+          <Card className="p-6 dark:bg-navy-dark dark:border-neutral-700">
+            <h2 className="text-xl font-bold text-navy-dark dark:text-foreground mb-4">Pending Deals</h2>
+            <div className="space-y-4">
+              {pendingDeals.map((deal) => (
+                <div key={deal.id} className="p-3 border border-warning-orange/20 bg-warning-orange/5 rounded-lg flex justify-between items-center">
+                  <div>
+                    <p className="font-bold text-navy-dark dark:text-foreground">{deal.title}</p>
+                    <p className="text-xs text-foreground/70">Seller: {deal.seller?.businessName || 'Unknown'}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" className="text-error-red border-error-red hover:bg-red-50 dark:hover:bg-red-900/20" onClick={() => handleRejectDeal(deal.id)}>Reject</Button>
+                    <Button variant="primary" size="sm" className="bg-success-green hover:bg-green-600 border-none" onClick={() => handleApproveDeal(deal.id)}>Approve</Button>
+                  </div>
+                </div>
+              ))}
+              {pendingDeals.length === 0 && <p className="text-foreground/50 text-center py-4">No pending deals</p>}
+            </div>
+          </Card>
+        </div>
       </div>
     </div>
-  );
+  )
 }
-
